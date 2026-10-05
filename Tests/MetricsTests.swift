@@ -80,6 +80,7 @@ struct MetricsTests {
                 RecorderExportRenderingTests.run(suite)
             }),
             ("command-bar", { CommandBarFeatureTests.run(suite) }),
+            ("pomodoro", { NotchPomodoroTests.run(suite) }),
             ("notch", {
                 NotchTests.run(suite)
                 NotchCompactTests.run(suite)
