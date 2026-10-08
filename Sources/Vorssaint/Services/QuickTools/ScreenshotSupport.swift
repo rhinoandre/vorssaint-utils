@@ -350,6 +350,14 @@ enum ScreenshotSupport {
         return .shown(dismissInterval: confirmationPreviewDismissInterval(duration))
     }
 
+    /// Captures go to the shelf on their own only while the shelf is
+    /// installed and on, so a switched-off shelf never fills up unseen.
+    static func addsCapturesToShelf(in defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: DefaultsKey.screenshotAddToShelf)
+            && AppFeature.shelf.isAvailable(in: defaults)
+            && defaults.bool(forKey: DefaultsKey.shelfEnabled)
+    }
+
     /// Remaining stroke for the one-second countdown ring. Time drives the
     /// value directly so a delayed frame catches up instead of restarting the
     /// animation or leaving the ring frozen.
@@ -1341,6 +1349,30 @@ enum ScreenshotSupport {
     }
 
     // MARK: - Annotation model
+
+    /// Movement in view points, so clicks keep the same tolerance at every
+    /// zoom. Only the pen keeps its path when it returns to the start; other
+    /// tools still discard a shape whose endpoints form a click.
+    struct EditorDrag {
+        private var start: CGPoint = .zero
+        private var stayedNearStart = true
+        private var endsNearStart = true
+
+        mutating func begin(at point: CGPoint) {
+            start = point
+            stayedNearStart = true
+            endsNearStart = true
+        }
+
+        mutating func update(to point: CGPoint) {
+            endsNearStart = hypot(point.x - start.x, point.y - start.y) < 7
+            stayedNearStart = stayedNearStart && endsNearStart
+        }
+
+        func isTap(for tool: Tool) -> Bool {
+            tool == .freehand ? stayedNearStart : endsNearStart
+        }
+    }
 
     enum Tool: String, CaseIterable {
         // Case order is the default rail order and therefore the default
